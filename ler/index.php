@@ -25,13 +25,14 @@ if ($id === 0) header('Location: /index.php');
 $sql = <<<SQL
 
 SELECT *,
-	DATE_FORMAT(art_date, '%d/%m/%Y às %H:%i') AS date_br,
-    DATE_FORMAT(user_birth, '%d/%m/%Y') AS birth_br
-FROM `articles`
+	    -- DATE_FORMAT(art_date, '%d/%m/%Y às %H:%i') AS date_br,
+        DATE_FORMAT(art_date, '%d/%m/%Y') AS date_br,
+        DATE_FORMAT(user_birth, '%d/%m/%Y') AS birth_br
+    FROM `articles`
 INNER JOIN `users` ON art_author = user_id
 WHERE art_id = '{$id}'
-AND art_status = 'on'
-AND art_date <= NOW();
+    AND art_status = 'on'
+    AND art_date <= NOW();
 
 SQL;
 
@@ -44,8 +45,93 @@ if ($res->num_rows != 1) header('Location: /index.php');
 // Tudo certo, vamos obter os dados do registro obtido
 $artigo = $res->fetch_assoc();
 
-print_r($artigo);
-exit;
+// dump($artigo);
+
+// Formata HTML para o navegador
+$html_article = <<<HTML
+
+<h2>{$artigo['art_title']}</h2>
+
+<div class="author-date">
+    Por {$artigo['user_name']} em {$artigo['date_br']}.
+</div>
+
+<div>{$artigo['art_content']}</div>
+
+HTML;
+
+// Primeiro nome do autor
+$nome = explode(' ', $artigo['user_name'])[0];
+
+// Obtém a idade do autor
+$idade = get_years_old($artigo['user_birth']);
+
+// Formata HTML para o autor
+$html_author = <<<HTML
+
+<div class="author-meta">
+
+    <img src="{$artigo['user_photo']}" alt="{$artigo['user_name']}">
+    <h3>{$nome}</h3>
+    <ul>
+        <li><strong>{$artigo['user_name']}</strong></li>
+        <li>E-mail: <a href="mailto:{$artigo['user_email']}" target="_blank">{$artigo['user_email']}</a></li>
+        <li>Nasceu em {$artigo['birth_br']} ({$idade} anos)</li>
+        <li>{$artigo['user_profile']}</li>
+    </ul>
+
+</div>
+
+HTML;
+
+// Verifica se autor tem mais artigos
+$sql = <<<SQL
+
+SELECT art_id, art_title, art_intro 
+FROM `articles`
+WHERE art_author = '{$artigo['user_id']}'
+    AND art_id != '{$artigo['art_id']}'
+	AND art_status = 'on'
+    AND art_date <= NOW()
+ORDER BY RAND()
+LIMIT 4;
+
+SQL;
+
+// Executa a query
+$res = $conn->query($sql);
+
+// Verifica se tem artigos
+if ($res->num_rows > 0) :
+
+
+    $html_author .= <<<HTML
+
+<div class="author-articles">
+
+    <h3>+ Artigos de {$nome}</h3>
+
+HTML;
+
+    // Loop para pegar todos os artigos recebidos
+    while ($mais_artigos = $res->fetch_assoc()) :
+
+        // Monta lista de artigos
+        $html_author .= <<<HTML
+
+    <div class="author-article" onclick="location.href='/ler/?id={$mais_artigos['art_id']}'">
+        <h4>{$mais_artigos['art_title']}</h4>
+        <small>{$mais_artigos['art_intro']}</small>
+    </div>
+
+HTML;
+
+    endwhile;
+
+    // Fecha lsita de artigos
+    $html_author .= "</div>";
+
+endif;
 
 /**
  * Tarefas:
@@ -67,16 +153,23 @@ require($_SERVER['DOCUMENT_ROOT'] . '/_header.php');
 
 <section>
 
-    <h2>Título da página</h2>
-    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsum, iste aliquam aperiam voluptatem molestias nemo odit unde modi cupiditate exercitationem doloremque quaerat soluta rerum quidem dignissimos officiis sapiente, aut alias!</p>
-    <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Optio soluta voluptatum consequatur voluptatibus cupiditate temporibus qui, nostrum deserunt minus laudantium in officia rem dignissimos facilis modi culpa error aliquam? Quam?</p>
+    <?php
+
+    // Exibe o conteúdo do artigo completo
+    echo $html_article;
+
+    ?>
 
 </section>
 
 <aside>
 
-    <h3>Lateral</h3>
-    <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Officia, aperiam corporis culpa consequatur iusto.</p>
+    <?php
+
+    // Exibe os dados do autor do artigo
+    echo $html_author;
+
+    ?>
 
 </aside>
 
