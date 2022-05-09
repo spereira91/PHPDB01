@@ -2,14 +2,6 @@
 
 /**
  * Arquivo que faz a configuração incial da página.
- * Por exemplo, conecta-se ao banco de dados.
- * 
- * A superglobal "$_SERVER['DOCUMENT_ROOT']" retorna o caminho da raiz do site no Windows.
- * Ex.: C:\xampp\htdocs 
- *     Referências:
- *     → https://www.w3schools.com/php/php_includes.asp
- *     → https://www.php.net/manual/pt_BR/function.include.php
- *     → https://www.php.net/manual/pt_BR/language.variables.superglobals.php
  */
 require($_SERVER['DOCUMENT_ROOT'] . '/_config.php');
 
@@ -18,7 +10,7 @@ require($_SERVER['DOCUMENT_ROOT'] . '/_config.php');
  ***********************************************/
 
 // Se usuário já está logado, redireciona para a página de perfil dele.
-if(isset($_COOKIE['user'])) header('Location: /user/profile/');
+if (isset($_COOKIE['user'])) header('Location: /user/profile/');
 
 // Variáveis principais
 $email = $password = $feedback = '';
@@ -80,16 +72,19 @@ SQL;
             // Apaga a senha
             unset($user_data['user_password']);
 
+            // Adiciona expiração do cookie.
+            $user_data['expires'] = $logged;
+
             // Grava o cookie no navegador
             // OBS:  cookies devem ser criados antes de enviar qualquer coisa para o navegador.
             setcookie(
                 'user',                 // nome do cookie criado
-                serialize($user_data),       // valor do cookie
+                serialize($user_data),  // valor do cookie
                 $logged,                // tempo de vida do cookie em segundos
                 '/'                     // Domínio do cookie "/" de localhost
             );
 
-            // envia usuário para a página inicial
+            // Envia usuário para a página inicial
             header('Location: /');
 
         endif;
@@ -104,11 +99,6 @@ endif;
 
 /**
  * Variável que define o título desta página.
- * Essa variável é usada no arquivo "_header.php".
- * OBS: para a página inicial (index.php) usaremos o 'slogan' do site.
- *     Referências:
- *     → https://www.w3schools.com/php/php_variables.asp
- *     → https://www.php.net/manual/pt_BR/language.variables.basics.php
  */
 $title = "Login...";
 
@@ -123,7 +113,9 @@ require($_SERVER['DOCUMENT_ROOT'] . '/_header.php');
 
     <h2>Login / Entrar</h2>
 
-    <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']) ?>" method="post">
+    <p class="text-center" style="margin-bottom: 0; color: grey"><i class="fa-solid fa-right-to-bracket fa-fw fa-4x"></i></p>
+
+    <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']) ?>" method="post" class="block-center">
 
         <?php
 
@@ -138,18 +130,18 @@ require($_SERVER['DOCUMENT_ROOT'] . '/_header.php');
         ?>
 
         <p>Logue-se para ter acesso ao conteúdo exclusivo. Se ainda não se cadastrou, <a href="/user/new/">cadastre-se aqui</a>.</p>
+        <small>Senha de teste (apague isso!) &rarr; Qw3rtyui0P</small>
 
         <p>
             <label for="email">E-mail:</label>
-            <input type="email" name="email" id="email" autocomplete="off" required class="valid" value="set@brino.com">
+            <input type="email" name="email" id="email" autocomplete="off" required class="valid" value="<?php echo $email ?>">
         </p>
 
         <p>
             <label for="password">Senha:</label>
-            <input type="password" name="password" id="password" autocomplete="off" required class="valid" value="Qw3rtyui0P" pattern="^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\S+$).{7,}$">
+            <input type="password" name="password" id="password" autocomplete="off" required class="valid password" value="" pattern="^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\S+$).{7,32}$">
+            <button type="button" id="passToggle"><i class="fa-solid fa-eye fa-fw"></i></button>
         </p>
-
-        <!--  -->
 
         <p>
             <label>
@@ -162,7 +154,7 @@ require($_SERVER['DOCUMENT_ROOT'] . '/_header.php');
             <button type="submit">Entrar</button>
         </p>
 
-        <hr>
+        <hr class="divider">
 
         <p class="user-links">
             <a href="/user/newpass/"><i class="fa-solid fa-key fa-fw"></i> Lembrar senha</a>
